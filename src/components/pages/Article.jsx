@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../service/firebase";
+import { formatDate } from "../../utils/dateFormat";
 
 export default function Article() {
   const { slug } = useParams();
@@ -31,6 +32,7 @@ export default function Article() {
 
       <div className="text-sm text-gray-500 mt-2 flex gap-4">
         <span>By {article.author}</span>
+        <span>{formatDate(article.createdAt)}</span>
         <span>{article.views} views</span>
       </div>
 

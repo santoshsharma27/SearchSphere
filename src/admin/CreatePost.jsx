@@ -40,10 +40,13 @@ export default function CreatePost() {
     if (!validateForm()) return;
 
     setLoading(true);
+
     try {
-      const docRef = await addDoc(collection(db, "articles"), {
+      const slug = generateSlug(title); // ✅ store before reset
+
+      await addDoc(collection(db, "articles"), {
         title: title.trim(),
-        slug: generateSlug(title),
+        slug,
         content: content.trim(),
         category,
         coverImage:
@@ -54,26 +57,28 @@ export default function CreatePost() {
         tags: [],
       });
 
-      console.log("Article published successfully with ID:", docRef.id);
       setSuccess(true);
+
+      // reset
       setTitle("");
       setContent("");
       setAuthor("");
       setImage(null);
 
+      // ✅ navigate to article page
       setTimeout(() => {
         navigate("/");
-      }, 2000);
+      }, 1500);
     } catch (err) {
-      console.error("Error publishing article:", err);
-      setError("Failed to publish article. Please try again.");
+      console.error(err);
+      setError("Failed to publish article.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getArticles } from "../service/articleService";
 import { Link, useNavigate } from "react-router-dom";
+import { formatDate } from "../../utils/dateFormat";
 
 export default function Home() {
   const [articles, setArticles] = useState([]);
@@ -77,6 +78,7 @@ export default function Home() {
                 </p>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t text-xs text-gray-500">
                   <span>{article.author}</span>
+                  <span>{formatDate(article.createdAt)}</span>
                 </div>
               </div>
             </div>
