@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../components/service/firebase";
-import { Navigate, useNavigate } from "react-router-dom";
+import { db } from "../components/service/firebase";
+import { useNavigate } from "react-router-dom";
+import { uploadImage } from "../components/service/cloudinary";
 
 export default function CreatePost() {
   const [title, setTitle] = useState("");
@@ -30,6 +30,10 @@ export default function CreatePost() {
       setError("Article content is required");
       return false;
     }
+    if (!image) {
+      setError("Cover image is required");
+      return false;
+    }
     return true;
   };
 
@@ -42,15 +46,16 @@ export default function CreatePost() {
     setLoading(true);
 
     try {
-      const slug = generateSlug(title); // ✅ store before reset
+      const slug = generateSlug(title);
+
+      const imageUrl = await uploadImage(image);
 
       await addDoc(collection(db, "articles"), {
         title: title.trim(),
         slug,
         content: content.trim(),
         category,
-        coverImage:
-          "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1600",
+        coverImage: imageUrl,
         author: author.trim(),
         createdAt: Timestamp.now(),
         views: 0,
@@ -65,7 +70,6 @@ export default function CreatePost() {
       setAuthor("");
       setImage(null);
 
-      // ✅ navigate to article page
       setTimeout(() => {
         navigate("/");
       }, 1500);
@@ -182,6 +186,29 @@ export default function CreatePost() {
                 <p className="text-xs text-gray-500 mt-1">
                   {content.length} characters
                 </p>
+              </div>
+
+              {/* Cover Image */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Cover Image <span className="text-red-500">*</span>
+                </label>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImage(e.target.files[0])}
+                  className="w-full"
+                  disabled={loading}
+                />
+
+                {image && (
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt="preview"
+                    className="mt-3 h-40 rounded-lg object-cover border"
+                  />
+                )}
               </div>
 
               {/* Buttons */}
