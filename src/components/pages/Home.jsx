@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getArticles } from "../service/articleService";
 import { Link, useNavigate } from "react-router-dom";
-import { formatDate } from "../../utils/dateFormat";
+import { formatDate } from "../utils/dateFormat";
+import Loader from "./Loader";
 
 export default function Home() {
   const [articles, setArticles] = useState([]);
@@ -11,7 +12,10 @@ export default function Home() {
     getArticles().then((data) => setArticles(data));
   }, []);
 
-  console.log(articles);
+  if (articles.length === 0) {
+    return <Loader />;
+  }
+
   return (
     <div className="bg-white min-h-screen">
       {/* Navbar */}
@@ -20,10 +24,16 @@ export default function Home() {
           <h1 className="text-2xl font-bold">SearchSphere</h1>
           <div className="flex gap-6 text-sm font-medium">
             <Link
-              to="/admin/create"
+              to="/create-post"
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
             >
               Create Post
+            </Link>
+            <Link
+              to="/admin-login"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+            >
+              Admin
             </Link>
           </div>
         </div>
@@ -119,7 +129,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t mt-12 py-6 text-center text-sm text-gray-500">
-        © 2026 SearchBlog. All rights reserved.
+        © {new Date().getFullYear()} SearchSphere. All rights reserved.
       </footer>
     </div>
   );

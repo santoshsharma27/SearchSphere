@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../service/firebase";
-import { formatDate } from "../../utils/dateFormat";
+import { formatDate } from "../utils/dateFormat";
+import Loader from "./Loader";
 
 export default function Article() {
   const { slug } = useParams();
@@ -20,7 +21,7 @@ export default function Article() {
     fetchArticle();
   }, [slug]);
 
-  if (!article) return <h1 className="text-center mt-10">Loading...</h1>;
+  if (!article) return <Loader />;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -39,7 +40,7 @@ export default function Article() {
       <img
         src={article.coverImage}
         alt={article.title}
-        className="w-full h-[380px] object-cover rounded-xl mt-6 shadow"
+        className="w-full h-96 object-cover rounded-xl mt-6 shadow"
       />
 
       <div className="mt-8 leading-8 text-gray-800 whitespace-pre-line">

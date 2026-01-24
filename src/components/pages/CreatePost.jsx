@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { db } from "../components/service/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { uploadImage } from "../components/service/cloudinary";
+import { db } from "../service/firebase";
+import { uploadImage } from "../service/cloudinary";
+import toast from "react-hot-toast";
 
 export default function CreatePost() {
   const [title, setTitle] = useState("");
@@ -15,7 +16,8 @@ export default function CreatePost() {
   const [success, setSuccess] = useState(false);
 
   const navigate = useNavigate();
-  const generateSlug = (text) => text.toLowerCase().replace(/\s+/g, "-");
+
+  const generateSlug = (text) => text.toLowerCase().trim().replace(/\s+/g, "-");
 
   const validateForm = () => {
     if (!author.trim()) {
@@ -47,7 +49,6 @@ export default function CreatePost() {
 
     try {
       const slug = generateSlug(title);
-
       const imageUrl = await uploadImage(image);
 
       await addDoc(collection(db, "articles"), {
@@ -57,25 +58,30 @@ export default function CreatePost() {
         category,
         coverImage: imageUrl,
         author: author.trim(),
-        createdAt: Timestamp.now(),
+        status: "pending",
+        createdAt: serverTimestamp(),
+        approvedAt: null,
+        approvedBy: null,
         views: 0,
         tags: [],
       });
 
+      toast.success("Article submitted for review");
       setSuccess(true);
 
-      // reset
+      // Reset form
       setTitle("");
       setContent("");
       setAuthor("");
       setImage(null);
 
+      // Redirect after short delay
       setTimeout(() => {
         navigate("/");
-      }, 1500);
+      }, 2000);
     } catch (err) {
       console.error(err);
-      setError("Failed to publish article.");
+      setError("Failed to submit article. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -94,14 +100,15 @@ export default function CreatePost() {
           </p>
         </div>
 
-        {/* Card Container */}
+        {/* Card */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-8">
             {/* Success Message */}
             {success && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 font-medium">
-                  ✓ Article published successfully! Redirecting...
+                  Your article has been submitted successfully and is under
+                  review. Once approved, it will be published on the homepage.
                 </p>
               </div>
             )}
@@ -121,18 +128,18 @@ export default function CreatePost() {
               }}
               className="space-y-6"
             >
-              {/* Author Name */}
+              {/* Author */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Your Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="John Doe"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                  disabled={loading}
+                  disabled={loading || success}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -143,11 +150,11 @@ export default function CreatePost() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., How to Optimize Your Website for SEO"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                  disabled={loading}
+                  disabled={loading || success}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">{title.length}/100</p>
               </div>
@@ -155,13 +162,13 @@ export default function CreatePost() {
               {/* Category */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Category <span className="text-red-500">*</span>
+                  Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
-                  disabled={loading}
+                  disabled={loading || success}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
                 >
                   <option value="SEO">SEO</option>
                   <option value="AI">AI</option>
@@ -176,36 +183,31 @@ export default function CreatePost() {
                   Content <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  placeholder="Write your article content here... Be detailed and informative!"
                   rows="12"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
-                  disabled={loading}
+                  disabled={loading || success}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none
+                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {content.length} characters
-                </p>
               </div>
 
-              {/* Cover Image */}
+              {/* Image */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Cover Image <span className="text-red-500">*</span>
                 </label>
-
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setImage(e.target.files[0])}
-                  className="w-full"
-                  disabled={loading}
+                  disabled={loading || success}
                 />
 
                 {image && (
                   <img
                     src={URL.createObjectURL(image)}
-                    alt="preview"
+                    alt="Preview"
                     className="mt-3 h-40 rounded-lg object-cover border"
                   />
                 )}
@@ -215,32 +217,27 @@ export default function CreatePost() {
               <div className="flex gap-4 pt-6">
                 <button
                   type="submit"
-                  onClick={publishPost}
-                  disabled={loading}
-                  className={`flex-1 px-6 py-3 rounded-lg font-semibold text-white transition transform ${
-                    loading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg hover:scale-105 active:scale-95"
-                  }`}
+                  disabled={loading || success}
+                  className={`flex-1 px-6 py-3 rounded-lg cursor-pointer font-semibold text-white transition
+                    ${
+                      loading || success
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-linear-to-r from-blue-600 to-blue-700 hover:shadow-lg hover:scale-105"
+                    }`}
                 >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span> Publishing...
-                    </span>
-                  ) : (
-                    "Publish Article"
-                  )}
+                  {loading ? "Publishing..." : "Submit for Review"}
                 </button>
+
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => {
                     setTitle("");
                     setContent("");
                     setAuthor("");
                     setError("");
                   }}
-                  disabled={loading}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                  className="px-6 cursor-pointer py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   Clear
                 </button>
@@ -249,11 +246,11 @@ export default function CreatePost() {
           </div>
         </div>
 
-        {/* Info Box */}
+        {/* Tip */}
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Tip:</strong> Write clear, engaging content with proper
-            headings and paragraphs for better readability.
+            💡 <strong>Tip:</strong> Clear structure and headings improve
+            readability and SEO.
           </p>
         </div>
       </div>
