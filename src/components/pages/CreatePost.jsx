@@ -174,7 +174,7 @@ export default function CreatePost() {
                   <option value="AI">AI</option>
                   <option value="Ads">Ads</option>
                   <option value="Marketing">Marketing</option>
-                  <option value="Marketing">Others</option>
+                  <option value="Others">Others</option>
                 </select>
               </div>
 
