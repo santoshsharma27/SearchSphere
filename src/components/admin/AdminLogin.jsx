@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("santosh37kr@gmail.com");
+  const [password, setPassword] = useState("Santosh@123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function AdminLogin() {
         duration: 1500,
       });
       setTimeout(() => {
-        navigate("/admin");
+        navigate("/dashboard");
       }, 1500);
     } catch (err) {
       console.error(err.code);

@@ -21,7 +21,7 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen">
       {/* ================= NAVBAR ================= */}
       <nav className="border-b sticky top-0 bg-white z-50">
         <div className="max-w-6xl mx-auto flex justify-between items-center px-4 py-3">
@@ -116,7 +116,7 @@ export default function Home() {
                 </h3>
 
                 <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  {article.excerpt || article.content}
+                  {article.content}
                 </p>
 
                 <div
@@ -156,7 +156,7 @@ export default function Home() {
               placeholder="Enter email"
               className="px-4 py-2 rounded border w-full sm:w-64"
             />
-            <button className="bg-black text-white px-5 py-2 rounded">
+            <button className="bg-black text-white px-5 py-2 rounded cursor-pointer">
               Subscribe
             </button>
           </div>

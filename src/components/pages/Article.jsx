@@ -6,8 +6,8 @@ import { formatDate } from "../utils/dateFormat";
 import Loader from "./Loader";
 
 export default function Article() {
-  const { slug } = useParams();
   const [article, setArticle] = useState(null);
+  const { slug } = useParams();
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -40,6 +40,7 @@ export default function Article() {
       <img
         src={article.coverImage}
         alt={article.title}
+        loading="lazy"
         className="w-full h-96 object-cover rounded-xl mt-6 shadow"
       />
 

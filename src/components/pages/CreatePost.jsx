@@ -1,23 +1,31 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { db } from "../service/firebase";
 import { uploadImage } from "../service/cloudinary";
 import toast from "react-hot-toast";
 
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+
 export default function CreatePost() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("SEO");
-  const [image, setImage] = useState(null);
   const [author, setAuthor] = useState("");
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("SEO");
+  const [content, setContent] = useState("");
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const generateSlug = (text) => text.toLowerCase().trim().replace(/\s+/g, "-");
+  const generateSlug = (text) =>
+    `${text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")}-${Date.now()}`;
 
   const validateForm = () => {
     if (!author.trim()) {
@@ -26,6 +34,10 @@ export default function CreatePost() {
     }
     if (!title.trim()) {
       setError("Article title is required");
+      return false;
+    }
+    if (title.length > 100) {
+      setError("Title should be less than 100 characters");
       return false;
     }
     if (!content.trim()) {
@@ -39,7 +51,35 @@ export default function CreatePost() {
     return true;
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload a valid image file");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError("Image size should be less than 2MB");
+      return;
+    }
+
+    setError("");
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  // Cleanup preview URL
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   const publishPost = async () => {
+    if (loading) return;
+
     setError("");
     setSuccess(false);
 
@@ -70,15 +110,13 @@ export default function CreatePost() {
       setSuccess(true);
 
       // Reset form
+      setAuthor("");
       setTitle("");
       setContent("");
-      setAuthor("");
       setImage(null);
+      setImagePreview(null);
 
-      // Redirect after short delay
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       console.error(err);
       setError("Failed to submit article. Please try again.");
@@ -86,6 +124,18 @@ export default function CreatePost() {
       setLoading(false);
     }
   };
+
+  function handleClear() {
+    setAuthor("");
+    setTitle("");
+    setContent("");
+    setImage(null);
+    setImagePreview(null);
+    setError("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -103,24 +153,21 @@ export default function CreatePost() {
         {/* Card */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-8">
-            {/* Success Message */}
             {success && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 font-medium">
                   Your article has been submitted successfully and is under
-                  review. Once approved, it will be published on the homepage.
+                  review.
                 </p>
               </div>
             )}
 
-            {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 font-medium">{error}</p>
               </div>
             )}
 
-            {/* Form */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -138,8 +185,8 @@ export default function CreatePost() {
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   disabled={loading || success}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg
-                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -153,8 +200,8 @@ export default function CreatePost() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={loading || success}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg
-                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">{title.length}/100</p>
               </div>
@@ -188,8 +235,8 @@ export default function CreatePost() {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   disabled={loading || success}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none
-                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -201,46 +248,65 @@ export default function CreatePost() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setImage(e.target.files[0])}
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
                   disabled={loading || success}
+                  className="block w-full text-sm file:mr-4 file:rounded-md
+                    file:border-0 file:bg-black file:px-4 file:py-2
+                    file:text-white hover:file:bg-gray-800 disabled:opacity-50"
                 />
 
-                {image && (
+                {imagePreview && (
                   <img
-                    src={URL.createObjectURL(image)}
-                    alt="Preview"
+                    src={imagePreview}
+                    alt="Cover preview"
                     className="mt-3 h-40 rounded-lg object-cover border"
                   />
                 )}
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-4 pt-6">
+              <div className="pt-6 flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
+                {/* Clear Button */}
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  disabled={loading}
+                  aria-disabled={loading}
+                  className="w-full sm:w-auto
+      px-6 py-3 cursor-pointer
+      rounded-lg
+      border border-gray-300
+      font-semibold
+      text-gray-700
+      transition
+      hover:bg-gray-50
+      focus:outline-none focus:ring-2 focus:ring-gray-400
+      disabled:opacity-50 disabled:cursor-not-allowed
+    "
+                >
+                  Clear
+                </button>
+
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={loading || success}
-                  className={`flex-1 px-6 py-3 rounded-lg cursor-pointer font-semibold text-white transition
-                    ${
-                      loading || success
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-linear-to-r from-blue-600 to-blue-700 hover:shadow-lg hover:scale-105"
-                    }`}
+                  className={`
+    w-full sm:flex-1
+    px-6 py-3
+    rounded-lg
+    font-semibold
+    text-white
+    transition
+    ${
+      loading || success
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-linear-to-r from-blue-600 to-blue-700 cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
+    }
+  `}
                 >
                   {loading ? "Publishing..." : "Submit for Review"}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => {
-                    setTitle("");
-                    setContent("");
-                    setAuthor("");
-                    setError("");
-                  }}
-                  className="px-6 cursor-pointer py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Clear
                 </button>
               </div>
             </form>
@@ -250,8 +316,8 @@ export default function CreatePost() {
         {/* Tip */}
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Tip:</strong> Clear structure and headings improve
-            readability and SEO.
+            💡 <strong>Tip:</strong> Clear structure and headings improve SEO
+            and readability.
           </p>
         </div>
       </div>
