@@ -7,25 +7,36 @@ import Loader from "../pages/Loader";
 export default function AdminPendingPosts() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchPendingPosts = async () => {
-      const q = query(
-        collection(db, "articles"),
-        where("status", "==", "pending"),
-        orderBy("createdAt", "desc"),
-      );
+      try {
+        const q = query(
+          collection(db, "articles"),
+          where("status", "==", "pending"),
+          orderBy("createdAt", "desc"),
+        );
 
-      const snapshot = await getDocs(q);
-      setPosts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
+        const snapshot = await getDocs(q);
+        setPosts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load pending articles");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchPendingPosts();
   }, []);
 
-  if (loading) {
-    return <Loader />;
+  if (loading) return <Loader />;
+
+  if (error) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8 text-red-600">{error}</div>
+    );
   }
 
   return (
@@ -44,7 +55,7 @@ export default function AdminPendingPosts() {
           >
             <div className="flex flex-col sm:flex-row">
               {/* Image */}
-              <div className="sm:w-48 w-full h-52 sm:h-auto  bg-gray-100">
+              <div className="sm:w-48 w-full h-52 sm:h-auto bg-gray-100">
                 <img
                   src={post.coverImage}
                   alt={post.title}
@@ -82,8 +93,19 @@ export default function AdminPendingPosts() {
                 </p>
 
                 <div className="mt-5 flex gap-3">
-                  <ApproveButton postId={post.id} />
-                  <RejectButton postId={post.id} />
+                  <ApproveButton
+                    postId={post.id}
+                    onAction={(id) =>
+                      setPosts((prev) => prev.filter((p) => p.id !== id))
+                    }
+                  />
+
+                  <RejectButton
+                    postId={post.id}
+                    onAction={(id) =>
+                      setPosts((prev) => prev.filter((p) => p.id !== id))
+                    }
+                  />
                 </div>
               </div>
             </div>

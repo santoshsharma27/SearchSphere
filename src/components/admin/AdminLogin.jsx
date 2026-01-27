@@ -5,37 +5,32 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("santosh37kr@gmail.com");
+  const [password, setPassword] = useState("Santosh@123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
-      toast.success("Logged in successfully", {
-        duration: 1500,
-      });
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+
+      toast.success("Logged in successfully", { duration: 1500 });
+      navigate("/dashboard");
     } catch (err) {
-      console.error(err.code);
-      if (
-        err.code === "auth/invalid-credential" ||
-        err.code === "auth/wrong-password" ||
-        err.code === "auth/user-not-found"
-      ) {
-        setError("Invalid email or password");
-      } else if (err.code === "auth/too-many-requests") {
-        setError("Too many failed attempts. Please try again later.");
+      console.error(err);
+
+      if (err?.code === "auth/too-many-requests") {
+        setError("Too many attempts. Please try again later.");
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("Invalid email or password");
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -53,15 +48,18 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600">
+          <div
+            role="alert"
+            className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600"
+          >
             {error}
           </div>
         )}
 
-        {/* Form */}
-        <div className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               Email
@@ -75,9 +73,12 @@ export default function AdminLogin() {
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-black focus:border-black
                          disabled:bg-gray-100"
+              autoComplete="email"
+              required
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               Password
@@ -91,13 +92,15 @@ export default function AdminLogin() {
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-black focus:border-black
                          disabled:bg-gray-100"
+              autoComplete="current-password"
+              required
             />
           </div>
 
           <button
-            onClick={handleLogin}
+            type="submit"
             disabled={loading}
-            className={`w-full rounded-md py-2.5 text-sm font-semibold text-white transition cursor-pointer
+            className={`w-full rounded-md cursor-pointer py-2.5 text-sm font-semibold text-white transition
               ${
                 loading
                   ? "bg-gray-400 cursor-not-allowed"
@@ -106,7 +109,7 @@ export default function AdminLogin() {
           >
             {loading ? "Logging in..." : "Login"}
           </button>
-        </div>
+        </form>
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-gray-400">

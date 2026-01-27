@@ -17,7 +17,7 @@ export default function CreatePost() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileRef = useRef(null);
   const navigate = useNavigate();
 
   const generateSlug = (text) =>
@@ -132,8 +132,8 @@ export default function CreatePost() {
     setImage(null);
     setImagePreview(null);
     setError("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (fileRef.current) {
+      fileRef.current.value = "";
     }
   }
 
@@ -231,7 +231,7 @@ export default function CreatePost() {
                   Content <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  rows="12"
+                  rows="10"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   disabled={loading || success}
@@ -248,7 +248,7 @@ export default function CreatePost() {
                 <input
                   type="file"
                   accept="image/*"
-                  ref={fileInputRef}
+                  ref={fileRef}
                   onChange={handleImageChange}
                   disabled={loading || success}
                   className="block w-full text-sm file:mr-4 file:rounded-md
@@ -300,7 +300,7 @@ export default function CreatePost() {
     text-white
     transition
     ${
-      loading || success
+      loading || success || error
         ? "bg-gray-400 cursor-not-allowed"
         : "bg-linear-to-r from-blue-600 to-blue-700 cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
     }
